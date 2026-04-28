@@ -16,8 +16,7 @@ sys.path.insert(0, dirname(dirname(abspath(__file__))))
 from app.core.config import settings
 from app.db.database import Base
 
-# ВАЖНО: В будущем сюда нужно будет импортировать ВСЕ  модели!
-# Например: from app.models.user import User
+import app.models  # noqa: F401  (ensure models are registered for Alembic)
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
