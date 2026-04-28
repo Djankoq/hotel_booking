@@ -13,6 +13,7 @@ class Hotel(Base):
     name: Mapped[str] = mapped_column(String(200))
     location: Mapped[str] = mapped_column(String(200))
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    image_url: Mapped[str | None] = mapped_column(String, nullable=True)
 
     manager_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), index=True)
     manager: Mapped["User"] = relationship(back_populates="managed_hotels")
@@ -22,4 +23,3 @@ class Hotel(Base):
 
 from app.models.user import User  # noqa: E402
 from app.models.room import Room  # noqa: E402
-

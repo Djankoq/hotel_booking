@@ -19,6 +19,7 @@ class Room(Base):
     price_per_night: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     capacity: Mapped[int] = mapped_column(Integer)
     is_available: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+    image_url: Mapped[str | None] = mapped_column(String, nullable=True)
 
     hotel: Mapped["Hotel"] = relationship(back_populates="rooms")
     bookings: Mapped[list["Booking"]] = relationship(back_populates="room", cascade="all, delete-orphan")
@@ -26,4 +27,3 @@ class Room(Base):
 
 from app.models.hotel import Hotel  # noqa: E402
 from app.models.booking import Booking  # noqa: E402
-
