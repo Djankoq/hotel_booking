@@ -21,3 +21,7 @@ docker compose exec app alembic upgrade head
 Swagger: http://localhost:8000/docs
 
 Остановка проекта: docker compose down
+
+
+Скрипт генарции данных: docker exec -it hotel_app_container python -m scripts.seed
+Скрипт очистки данных:  docker exec -it hotel_app_container python -m scripts.clear_data          
