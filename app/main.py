@@ -5,9 +5,11 @@ app = FastAPI(title="Hotel Booking API")
 
 from app.api.auth import router as auth_router
 from app.api.hotels import router as hotels_router
+from app.api.booking import router as bookings_router
 
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(hotels_router, prefix="/hotels", tags=["hotels"])
+app.include_router(bookings_router, prefix="/bookings", tags=["bookings"])
 
 @app.get("/")
 async def root():
