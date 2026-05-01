@@ -1,13 +1,15 @@
 from __future__ import annotations
+from typing import Annotated
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
 from app.core.config import settings
 from app.db.session import get_db
 from app.models.user import User
-from app.schemas.auth import ChangePasswordRequest, TokenResponse, UserLogin
+from app.schemas.auth import ChangePasswordRequest, TokenResponse
 from app.schemas.user import UserCreate, UserRead
 from app.services import auth_service
 
@@ -27,11 +29,15 @@ async def register(payload: UserCreate, db: AsyncSession = Depends(get_db)) -> U
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(payload: UserLogin, response: Response, db: AsyncSession = Depends(get_db)) -> TokenResponse:
+async def login(
+    response: Response,
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    db: AsyncSession = Depends(get_db),
+) -> TokenResponse:
     access_token, refresh_token = await auth_service.login_user(
         db,
-        login=payload.login,
-        password=payload.password,
+        login=form_data.username, # OAuth2PasswordRequestForm использует поле 'username'
+        password=form_data.password,
     )
 
     response.set_cookie(
@@ -71,4 +77,3 @@ async def change_password(
         new_password=payload.new_password,
     )
     return {"status": "ok"}
-

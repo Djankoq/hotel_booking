@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from datetime import date
 
@@ -8,6 +9,7 @@ from app.api import deps
 from app.services.booking_service import booking_service
 from app.models.room import Room
 from app.models.booking import Booking
+from app.models.user import User
 
 router = APIRouter(tags=["bookings"])
 
@@ -17,20 +19,16 @@ async def create_booking(
     check_in: date,
     check_out: date,
     db: AsyncSession = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_user),
 ):
-    # 1. найти комнату
     room = await db.get(Room, room_id)
 
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
 
-    # 2. user временно (потом заменим на auth)
-    user_id = 1
-
-    # 3. создать бронь через сервис
     try:
         booking = await booking_service.create_booking(
-            db, user_id, room, check_in, check_out
+            db, current_user.id, room, check_in, check_out
         )
         return booking
 
@@ -40,28 +38,25 @@ async def create_booking(
 @router.get("/my")
 async def get_my_bookings(
     db: AsyncSession = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_user),
 ):
-    user_id = 1  # временно
-
     result = await db.execute(
-        select(Booking).where(Booking.user_id == user_id)
+        select(Booking).where(Booking.user_id == current_user.id)
     )
-
     return result.scalars().all()
 
 @router.delete("/{booking_id}")
 async def cancel_booking(
     booking_id: int,
     db: AsyncSession = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_user),
 ):
     booking = await db.get(Booking, booking_id)
 
     if not booking:
         raise HTTPException(404, "Booking not found")
 
-    user_id = 1
-
-    if booking.user_id != user_id:
+    if booking.user_id != current_user.id:
         raise HTTPException(403, "Not allowed")
 
     booking.status = "cancelled"
@@ -75,21 +70,21 @@ async def update_booking(
     check_in: date,
     check_out: date,
     db: AsyncSession = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_user),
 ):
-    booking = await db.get(Booking, booking_id)
+    query = select(Booking).where(Booking.id == booking_id).options(selectinload(Booking.room))
+    result = await db.execute(query)
+    booking = result.scalar_one_or_none()
 
     if not booking:
         raise HTTPException(404)
 
-    user_id = 1
-
-    if booking.user_id != user_id:
+    if booking.user_id != current_user.id:
         raise HTTPException(403)
 
     if check_in >= check_out:
         raise HTTPException(400, "Invalid dates")
 
-    # проверка доступности (исключая текущую бронь)
     query = await db.execute(
         select(Booking).where(
             Booking.room_id == booking.room_id,
@@ -105,7 +100,6 @@ async def update_booking(
     if query.scalars().first():
         raise HTTPException(400, "Room not available")
 
-    # пересчёт цены
     nights = (check_out - check_in).days
     booking.check_in = check_in
     booking.check_out = check_out
@@ -119,11 +113,15 @@ async def update_booking(
 async def confirm_booking(
     booking_id: int,
     db: AsyncSession = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_user),
 ):
     booking = await db.get(Booking, booking_id)
 
     if not booking:
-        raise HTTPException(404)
+        raise HTTPException(404, "Booking not found")
+
+    if booking.user_id != current_user.id:
+        raise HTTPException(403, "Not allowed to confirm this booking")
 
     booking.status = "confirmed"
 
