@@ -11,7 +11,7 @@ from app.core.config import settings
 from app.core.security import hash_password
 from app.models import User, Hotel, Room, Booking
 
-NUM_USERS = 10
+NUM_RANDOM_USERS = 9
 NUM_HOTELS = 20
 MIN_ROOMS_PER_HOTEL = 5
 MAX_ROOMS_PER_HOTEL = 15
@@ -36,23 +36,33 @@ async def seed_data():
         await session.commit()
         print("Старые данные удалены.")
 
-        print(f"Создание {NUM_USERS} пользователей...")
+        print("Создание пользователей...")
         users = []
-        for i in range(NUM_USERS):
+
+        manager_user = User(
+            first_name="Admin",
+            last_name="Manager",
+            login="manager@test.com",
+            password_hash=hash_password("password123"),
+            is_manager=True
+        )
+        users.append(manager_user)
+
+        for _ in range(NUM_RANDOM_USERS):
             user = User(
                 first_name=fake.first_name(),
                 last_name=fake.last_name(),
                 login=fake.unique.email(),
                 password_hash=hash_password("password123"),
-                is_manager=(i == 0) # Первый пользователь будет менеджером
+                is_manager=False
             )
             users.append(user)
+            
         session.add_all(users)
         await session.commit()
-        print("Пользователи созданы.")
+        print(f"Создано {len(users)} пользователей (включая менеджера).")
 
-        # Получаем менеджера (первый пользователь)
-        manager_user = users[0]
+        await session.refresh(manager_user)
 
         print(f"Создание {NUM_HOTELS} отелей...")
         hotels = []
