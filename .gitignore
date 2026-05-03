@@ -4,3 +4,7 @@ __pycache__/
 *.pyc
 .env
 .pytest_cache/
+# Тестовые БД и кэш
+test_*.db
+test_*.sqlite
+.pytest_cache/
