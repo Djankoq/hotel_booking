@@ -13,3 +13,5 @@ httpx
 asyncpg
 Faker
 python-multipart
+textdistance
+aiosqlite==0.19.0
