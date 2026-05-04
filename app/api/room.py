@@ -23,9 +23,15 @@ async def get_recommendations(
     """
     Получение списка рекомендованных комнат, по другой комнате
     """
-    rooms = await ai_service.get_recommendations(
-        db,
-        room_id = room_id,
-        limit = limit
-    )
+    try:
+        rooms = await ai_service.get_recommendations(
+            db,
+            room_id=room_id,
+            limit=limit
+        )
+    except ValueError as exc:
+        if "not found" in str(exc).lower():
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
     return rooms
