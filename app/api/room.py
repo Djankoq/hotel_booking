@@ -14,34 +14,6 @@ from app.schemas.ai import BookedRoom
 
 router = APIRouter(tags=["room"])
 
-@router.get('/')
-async def get_room(
-        room_id: int,
-        db: AsyncSession = Depends(deps.get_db)
-):
-    """
-    Получение комнаты по идентификатору
-    """
-    room = await room_service.get_room(
-        db,
-        room_id = room_id
-    )
-    return room
-
-@router.get('/{user_id}')
-async def get_last_booked_room(
-        user_id: int,
-        db: AsyncSession = Depends(deps.get_db)
-):
-    """
-    Получение последней забронированной комнаты пользователя
-    """
-    room = await ai_service.get_last_booked_room(
-        db,
-        user_id = user_id
-    )
-    return room
-
 @router.get('/{room_id}/recommendations')
 async def get_recommendations(
         room_id: int,
