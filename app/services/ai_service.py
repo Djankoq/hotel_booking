@@ -17,7 +17,7 @@ class AIService:
             user_id: int,
     ):
         #Получение даты последнего забронированного отеля
-        latest_date = select(func.max(Booking.created_at)).where((Booking.user_id == user_id) and (Booking.status == "confirmed")).scalar_subquery()
+        latest_date = select(func.max(Booking.created_at)).where((Booking.user_id == user_id), (Booking.status == "confirmed")).scalar_subquery()
 
         #Проверка существование даты
         if latest_date is not None:
@@ -44,6 +44,9 @@ class AIService:
         base_room = await db.execute(base_room)
         base_room = base_room.scalar_one_or_none()
 
+        if base_room is None:
+            raise ValueError(f"Room with id {room_id} not found")
+
         # Получение запрашиваемого отеля
         base_hotel = select(Hotel).filter(Hotel.id == base_room.hotel_id)
         base_hotel = await db.execute(base_hotel)
@@ -57,6 +60,11 @@ class AIService:
 
         price_range = max_price - min_price
         cap_range = max_cap - min_cap
+
+        if price_range == 0:
+            raise ValueError("Price range is zero - can't normalize")
+        if cap_range == 0:
+            raise ValueError("Capacity range is zero - can't normalize")
 
         # Создания списка всех других комнат для оценки
         other_rooms = select(Room).filter(Room.is_available == True, Room.id != room_id)
