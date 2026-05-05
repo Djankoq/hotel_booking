@@ -8,14 +8,13 @@ cp .env.example .env
 Для Windows (PowerShell):
 copy .env.example .env
 
-3. Убедиться что в .env заполнен SECRET_KEY и указан правильный DATABASE_URL для Docker
+3. Убедиться что в .env заполнен SECRET\_KEY и указан правильный DATABASE\_URL для Docker
 4. Сборка и запуск контейнеров
 
 docker compose up --build -d
 
 5. Применение миграций (Создание таблиц)
 docker compose exec app alembic upgrade head
-
 6. Если все шаги выполнены успешно, API доступно по адресам:
 
 Swagger: http://localhost:8000/docs
@@ -23,5 +22,15 @@ Swagger: http://localhost:8000/docs
 Остановка проекта: docker compose down
 
 
-Скрипт генарции данных: docker exec -it hotel_app_container python -m scripts.seed
-Скрипт очистки данных:  docker exec -it hotel_app_container python -m scripts.clear_data          
+
+Скрипт генарции данных: docker exec -it hotel\_app\_container python -m scripts.seed
+Скрипт очистки данных:  docker exec -it hotel\_app\_container python -m scripts.clear\_data
+
+
+
+## Обоснование модели алгоритма подбора:
+
+Для создания алгоритма подбора, была использована нормализированное эквклидова расстояние. По той причине что свойства по которым мы сравнивали и создавали рекомендации являются слишком различные, включая масштаб и тип данных, то мы нормализовали все свойства к значениям \[0:1]. 
+* Так значение локации (location) является бинарным, сходится ли оно или нет, принимая значение 0 если сходится и 1 если не сходится. 
+* Описание (Description), мы сравнивали количеством схожих слов между двумя описаниями, где 0 показывает что они идентичны, а 1 что нет ни одного схожего слова. 
+* По вместительности (Capacity) и цене (price\_per\_night), мы использовали формулу (x1-x2)/(xmax-xmin).
