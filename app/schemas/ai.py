@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import date
 
 from app.models.booking import BookingStatus
@@ -15,6 +15,5 @@ class BookedRoom(BaseModel):
     created_at: date
     status: BookingStatus
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 

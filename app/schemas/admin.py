@@ -1,4 +1,4 @@
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, ConfigDict
 from typing import Optional
 from decimal import Decimal
 from datetime import date
@@ -11,9 +11,7 @@ class RoomForBookingAdmin(BaseModel):
     id: int
     name: str
     hotel_id: int
-    
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class BookingAdminRead(BaseModel):
     id: int
@@ -23,9 +21,7 @@ class BookingAdminRead(BaseModel):
     check_out: date
     total_price: Decimal
     status: BookingStatus
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class BookingStatusUpdate(BaseModel):
     status: BookingStatus

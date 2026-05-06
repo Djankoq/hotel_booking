@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, Relationship
 from typing import Optional
 
 from app.models import Booking, Hotel, Room
@@ -23,8 +23,7 @@ class AdminService:
         return result.scalars().all()
 
     async def update_booking_status(self, db: AsyncSession, *, booking_id: int, new_status: BookingStatus):
-        query = select(Booking).where(Booking.id == booking_id).options(selectinload(Booking.user),
-                                                                        selectinload(Booking.room))
+        query = select(Booking).where(Booking.id == booking_id)
         result = await db.execute(query)
         booking = result.scalar_one_or_none()
 
@@ -32,6 +31,14 @@ class AdminService:
             booking.status = new_status
             await db.commit()
             await db.refresh(booking)
+
+            query = select(Booking).where(Booking.id == booking_id).options(
+                selectinload(Booking.user),
+                selectinload(Booking.room)
+            )
+            result = await db.execute(query)
+            booking = result.scalar_one_or_none()
+
         return booking
 
     async def create_hotel(self, db: AsyncSession, *, payload: HotelCreate, manager_id: int):
