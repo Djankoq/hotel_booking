@@ -33,7 +33,6 @@ async def test_admin_get_all_bookings(client: AsyncClient, manager_token: dict, 
 
 # AT-007: Изменить статус брони — ✅ Помечен как xfail (баг в бэкенде)
 @pytest.mark.asyncio
-@pytest.mark.xfail(reason="Backend bug: Booking schema requires eager loading (selectinload) for user/room relations")
 async def test_admin_update_booking_status(client: AsyncClient, manager_token: dict, test_room_id: int):
     """
     Тест изменения статуса брони.
@@ -124,7 +123,6 @@ async def test_admin_get_all_bookings_with_verification(client: AsyncClient, man
 # AT-012: Админ: изменить статус + ПРОВЕРКА
 # ⚠️ Помечен как xfail из-за бага в бэкенде (нет selectinload для user/room)
 @pytest.mark.asyncio
-@pytest.mark.xfail(reason="Backend bug: Booking schema requires eager loading (selectinload)")
 async def test_admin_update_status_with_verification(client: AsyncClient, manager_token: dict, test_room_id: int):
     """Изменение статуса брони менеджером с проверкой через пользовательский эндпоинт"""
     # 1. Создаём бронь обычным юзером

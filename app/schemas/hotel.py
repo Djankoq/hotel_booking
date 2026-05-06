@@ -1,4 +1,4 @@
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, ConfigDict
 from typing import List, Optional
 from decimal import Decimal
 
@@ -12,9 +12,7 @@ class RoomBase(BaseModel):
 class Room(RoomBase):
     id: int
     hotel_id: int
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class HotelBase(BaseModel):
     name: str
@@ -25,6 +23,4 @@ class HotelBase(BaseModel):
 class Hotel(HotelBase):
     id: int
     rooms: List[Room] = []
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
