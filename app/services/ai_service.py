@@ -1,4 +1,3 @@
-from datetime import date, datetime
 from textdistance import jaccard
 from math import sqrt, pow
 
@@ -67,7 +66,7 @@ class AIService:
             raise ValueError("Capacity range is zero - can't normalize")
 
         # Создания списка всех других комнат для оценки
-        other_rooms = select(Room).filter(Room.is_available == True, Room.id != room_id)
+        other_rooms = select(Room).filter(Room.is_available, Room.id != room_id)
         other_rooms = await db.execute(other_rooms)
         other_rooms = other_rooms.scalars().all()
 

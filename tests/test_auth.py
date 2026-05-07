@@ -33,7 +33,7 @@ async def test_register_manager(client: AsyncClient):
     assert resp.status_code == 201
     data = resp.json()
     assert data["login"] == "manager@test.com"
-    assert data["is_manager"] == True
+    assert data["is_manager"]
 
 # AT-003: Регистрация с дубликатом логина
 @pytest.mark.asyncio

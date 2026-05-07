@@ -2,7 +2,6 @@ from pydantic import BaseModel, ConfigDict
 from datetime import date
 
 from app.models.booking import BookingStatus
-from app.schemas.hotel import Room
 
 
 

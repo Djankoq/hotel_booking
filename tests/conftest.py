@@ -51,7 +51,7 @@ async def client(db_session):
 @pytest_asyncio.fixture(scope="function")
 async def user_token(client: AsyncClient):
     # Регистрация (используем login, как в модели)
-    reg_resp = await client.post("/auth/register", json={
+    await client.post("/auth/register", json={
         "first_name": "Test",
         "last_name": "User",
         "login": "testuser@example.com",  # ← регистрация принимает login

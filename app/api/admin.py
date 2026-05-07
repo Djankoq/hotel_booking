@@ -8,7 +8,7 @@ from app.schemas.admin import BookingAdminRead, BookingStatusUpdate, HotelCreate
 from app.schemas.hotel import Hotel as HotelRead, Room as RoomRead
 from app.services.admin_service import admin_service
 
-router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(deps.get_current_manager)])
+router = APIRouter(tags=["admin"], dependencies=[Depends(deps.get_current_manager)])
 
 @router.get("/bookings", response_model=List[BookingAdminRead])
 async def get_all_bookings(
