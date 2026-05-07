@@ -38,7 +38,8 @@ services:
       db:
         condition: service_healthy
     # Переопределяем команду запуска, добавляя --reload для режима разработки
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    command: >
+      sh -c "sleep 5 && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 
 # Объявляем volume для БД
 volumes:

@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload, Relationship
+from sqlalchemy.orm import selectinload
 from typing import Optional
 
 from app.models import Booking, Hotel, Room

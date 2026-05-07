@@ -1,13 +1,12 @@
 from fastapi import FastAPI
 from app.core.config import settings
-
-app = FastAPI(title="Hotel Booking API")
-
 from app.api.auth import router as auth_router
 from app.api.hotels import router as hotels_router
 from app.api.booking import router as bookings_router
 from app.api.admin import router as admin_router
 from app.api.room import router as room_router
+
+app = FastAPI(title="Hotel Booking API")
 
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(hotels_router, prefix="/hotels", tags=["hotels"])

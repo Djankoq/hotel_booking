@@ -20,7 +20,7 @@ async def get_hotels(
     db: AsyncSession = Depends(deps.get_db),
 ):
     """
-    Получение списка отлей с возможностью фильтрации по параметрам
+    Получение списка отелей с возможностью фильтрации по параметрам
     """
     hotels = await hotel_service.get_multi(
         db,

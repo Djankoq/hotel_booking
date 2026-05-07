@@ -68,24 +68,6 @@ async def test_admin_access_denied(client: AsyncClient, user_token: dict):
     assert resp.status_code == 403
     assert "Manager" in resp.json()["detail"]
 
-    import pytest
-from httpx import AsyncClient
-
-# === Вспомогательная функция (локальная для этого файла) ===
-async def _get_user_token(client: AsyncClient) -> dict:
-    """Регистрирует и логинит обычного юзера, возвращает заголовки."""
-    await client.post("/auth/register", json={
-        "first_name": "Temp", "last_name": "User",
-        "login": "temp@example.com", "password": "Temp123!",
-        "is_manager": False
-    })
-    login_resp = await client.post("/auth/login", data={
-        "username": "temp@example.com",  # OAuth2 ждёт username
-        "password": "Temp123!"
-    })
-    token = login_resp.json().get("access_token") or login_resp.json().get("token")
-    return {"Authorization": f"Bearer {token}"}
-
 
 # AT-011: Админ: получить все брони + ПРОВЕРКА
 @pytest.mark.asyncio
@@ -159,7 +141,7 @@ async def test_admin_update_status_with_verification(client: AsyncClient, manage
 
 # AT-013: Админ: доступ без прав
 @pytest.mark.asyncio
-async def test_admin_access_denied(client: AsyncClient, user_token: dict):
+async def test_admin_access_denied_regular_user(client: AsyncClient, user_token: dict):
     """Обычный пользователь НЕ может получить доступ к админ-эндпоинтам"""
     # Пытаемся создать отель как обычный юзер (is_manager=false)
     resp = await client.post("/admin/admin/hotels", json={

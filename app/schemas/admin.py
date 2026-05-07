@@ -1,4 +1,4 @@
-from pydantic import BaseModel, HttpUrl, ConfigDict
+from pydantic import BaseModel, HttpUrl, ConfigDict, Field
 from typing import Optional
 from decimal import Decimal
 from datetime import date
@@ -37,6 +37,6 @@ class RoomCreate(BaseModel):
     hotel_id: int
     name: str
     description: Optional[str] = None
-    price_per_night: Decimal
-    capacity: int
+    price_per_night: Decimal = Field(..., gt=0)
+    capacity: int = Field(..., gt=0)
     image_url: Optional[HttpUrl] = None

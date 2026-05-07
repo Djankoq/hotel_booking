@@ -82,6 +82,9 @@ async def update_booking(
     if booking.user_id != current_user.id:
         raise HTTPException(403)
 
+    if booking.status == "cancelled":
+        raise HTTPException(400, "Cannot update a cancelled booking")
+
     if check_in >= check_out:
         raise HTTPException(400, "Invalid dates")
 
@@ -122,6 +125,9 @@ async def confirm_booking(
 
     if booking.user_id != current_user.id:
         raise HTTPException(403, "Not allowed to confirm this booking")
+    
+    if booking.status == "cancelled":
+        raise HTTPException(400, "Cannot update a cancelled booking")
 
     booking.status = "confirmed"
 
