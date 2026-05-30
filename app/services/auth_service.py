@@ -9,8 +9,10 @@ from app.core.security import (
     create_refresh_token,
     hash_password,
     verify_password,
+    decode_token,
 )
 from app.models.user import User
+from app.db.session import get_db
 
 
 async def register_user(
@@ -65,9 +67,7 @@ async def change_password(
     await db.commit()
 
 
-async def refresh_access_token(*, refresh_token: str) -> str:
-    from app.core.security import decode_token
-
+async def refresh_access_token(*, refresh_token: str, db: AsyncSession) -> tuple[str, User]:
     try:
         payload = decode_token(refresh_token)
     except ValueError:
@@ -80,5 +80,9 @@ async def refresh_access_token(*, refresh_token: str) -> str:
     if not sub:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
 
-    return create_access_token({"sub": str(sub)})
+    user = await db.get(User, int(sub))
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
+    new_access_token = create_access_token({"sub": str(user.id)})
+    return new_access_token, user

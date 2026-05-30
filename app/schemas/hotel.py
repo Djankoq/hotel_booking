@@ -24,3 +24,7 @@ class Hotel(HotelBase):
     id: int
     rooms: List[Room] = []
     model_config = ConfigDict(from_attributes=True)
+
+class HotelsResponse(BaseModel):
+    total: int
+    hotels: List[Hotel]

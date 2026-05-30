@@ -1,28 +1,31 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api import deps
-from app.schemas.hotel import Hotel, Room
+from app.schemas.hotel import Room, HotelsResponse
 from app.services.hotel_service import hotel_service
 from typing import List, Optional
 from datetime import date
 
 router = APIRouter()
 
-@router.get("/", response_model=List[Hotel])
+@router.get("/", response_model=HotelsResponse)
 async def get_hotels(
     location: Optional[str] = None,
     price_from: Optional[int] = None,
     price_to: Optional[int] = None,
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
-    limit: int = Query(10, ge=1, le=100),
-    offset: int = Query(0, ge=0),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
     db: AsyncSession = Depends(deps.get_db),
 ):
     """
-    Получение списка отелей с возможностью фильтрации по параметрам
+    Получение списка отелей с пагинацией и общим количеством.
     """
-    hotels = await hotel_service.get_multi(
+    limit = page_size
+    offset = (page - 1) * page_size
+
+    hotels, total_count = await hotel_service.get_multi(
         db,
         location=location,
         price_from=price_from,
@@ -32,7 +35,7 @@ async def get_hotels(
         limit=limit,
         offset=offset,
     )
-    return hotels
+    return {"total": total_count, "hotels": hotels}
 
 
 @router.get("/{hotel_id}/rooms", response_model=List[Room])

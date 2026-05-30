@@ -13,7 +13,7 @@ from app.models import User, Hotel, Room, Booking
 from app.models.booking import BookingStatus
 
 NUM_RANDOM_USERS = 8
-NUM_HOTELS = 20
+NUM_HOTELS = 100
 MIN_ROOMS_PER_HOTEL = 5
 MAX_ROOMS_PER_HOTEL = 15
 NUM_RANDOM_BOOKINGS = 50

@@ -12,6 +12,7 @@ from app.models.user import User
 from app.schemas.auth import ChangePasswordRequest, TokenResponse
 from app.schemas.user import UserCreate, UserRead
 from app.services import auth_service
+from app.services.user_service import user_service
 
 router = APIRouter()
 
@@ -49,19 +50,34 @@ async def login(
         path="/auth",
     )
 
-    return TokenResponse(access_token=access_token, token_type="bearer")
+    user = await user_service.get_by_login(db, login=form_data.username)
+
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer",
+        first_name=user.first_name,
+        last_name=user.last_name,
+    )
 
 
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh(
     response: Response,
     refresh_token: str | None = Cookie(default=None, alias=settings.REFRESH_COOKIE_NAME),
+    db: AsyncSession = Depends(get_db),
 ) -> TokenResponse:
     if not refresh_token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing refresh token cookie")
 
-    new_access = await auth_service.refresh_access_token(refresh_token=refresh_token)
-    return TokenResponse(access_token=new_access, token_type="bearer")
+    new_access_token, user = await auth_service.refresh_access_token(refresh_token=refresh_token, db=db)
+
+    return TokenResponse(
+        access_token=new_access_token,
+        token_type="bearer",
+        first_name=user.first_name,
+        last_name=user.last_name,
+    )
 
 
 @router.post("/change-password")
