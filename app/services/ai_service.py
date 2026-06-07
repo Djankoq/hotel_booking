@@ -66,7 +66,7 @@ class AIService:
             raise ValueError("Capacity range is zero - can't normalize")
 
         # Создания списка всех других комнат для оценки
-        other_rooms = select(Room).filter(Room.is_available, Room.id != room_id)
+        other_rooms = select(Room).filter(Room.is_available, Room.id != room_id, Room.hotel_id != base_room.hotel_id)
         other_rooms = await db.execute(other_rooms)
         other_rooms = other_rooms.scalars().all()
 

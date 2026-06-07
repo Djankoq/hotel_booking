@@ -1,5 +1,6 @@
 import pytest
 from httpx import AsyncClient
+from decimal import Decimal
 
 # === Вспомогательная функция ===
 async def _get_user_token(client: AsyncClient) -> dict:
@@ -17,7 +18,7 @@ async def _get_user_token(client: AsyncClient) -> dict:
     return {"Authorization": f"Bearer {token}"}
 
 
-# AT-006: Получить все брони (админ) — ✅ Правильный URL: /admin/admin/
+# AT-006: Получить все брони (админ)
 @pytest.mark.asyncio
 async def test_admin_get_all_bookings(client: AsyncClient, manager_token: dict, test_room_id: int):
     user_token = await _get_user_token(client)
@@ -25,10 +26,52 @@ async def test_admin_get_all_bookings(client: AsyncClient, manager_token: dict, 
         "room_id": test_room_id, "check_in": "2026-09-01", "check_out": "2026-09-03"
     }, headers=user_token)
     
-    resp = await client.get("/admin/admin/bookings?limit=10", headers=manager_token)
-    print(f"[DEBUG] GET /admin/admin/bookings: {resp.status_code}")
+    resp = await client.get("/admin/bookings?limit=10", headers=manager_token)
+    print(f"[DEBUG] GET /admin/bookings: {resp.status_code}")
     assert resp.status_code == 200
-    assert isinstance(resp.json(), list)
+    data = resp.json()
+    assert isinstance(data["bookings"], list)
+    assert data["total_bookings"] == 1
+    assert data["confirmed_bookings"] == 0
+    assert data["cancelled_bookings"] == 0
+    assert Decimal(str(data["total_revenue"])) == Decimal("0.00")
+
+
+@pytest.mark.asyncio
+async def test_admin_get_all_bookings_returns_summary(client: AsyncClient, manager_token: dict, test_room_id: int):
+    user_token = await _get_user_token(client)
+
+    confirmed_resp = await client.post("/bookings/", params={
+        "room_id": test_room_id, "check_in": "2026-09-01", "check_out": "2026-09-03"
+    }, headers=user_token)
+    cancelled_resp = await client.post("/bookings/", params={
+        "room_id": test_room_id, "check_in": "2026-09-04", "check_out": "2026-09-05"
+    }, headers=user_token)
+    pending_resp = await client.post("/bookings/", params={
+        "room_id": test_room_id, "check_in": "2026-09-06", "check_out": "2026-09-07"
+    }, headers=user_token)
+
+    assert confirmed_resp.status_code in (200, 201)
+    assert cancelled_resp.status_code in (200, 201)
+    assert pending_resp.status_code in (200, 201)
+
+    confirmed_booking_id = confirmed_resp.json()["id"]
+    cancelled_booking_id = cancelled_resp.json()["id"]
+
+    confirm_resp = await client.post(f"/bookings/{confirmed_booking_id}/confirm", headers=user_token)
+    cancel_resp = await client.delete(f"/bookings/{cancelled_booking_id}", headers=user_token)
+    assert confirm_resp.status_code == 200
+    assert cancel_resp.status_code == 200
+
+    resp = await client.get("/admin/bookings?limit=2", headers=manager_token)
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data["bookings"]) == 2
+    assert data["total_bookings"] == 3
+    assert data["confirmed_bookings"] == 1
+    assert data["cancelled_bookings"] == 1
+    assert Decimal(str(data["total_revenue"])) == Decimal("2000.00")
 
 
 # AT-007: Изменить статус брони — ✅ Помечен как xfail (баг в бэкенде)
@@ -50,7 +93,7 @@ async def test_admin_update_booking_status(client: AsyncClient, manager_token: d
     booking_id = create_resp.json()["id"]
     
     resp = await client.patch(
-        f"/admin/admin/bookings/{booking_id}/status",
+        f"/admin/bookings/{booking_id}/status",
         json={"status": "confirmed"},
         headers=manager_token
     )
@@ -58,13 +101,13 @@ async def test_admin_update_booking_status(client: AsyncClient, manager_token: d
     assert resp.json()["status"] == "confirmed"
 
 
-# AT-008: Доступ без прав менеджера — ✅ Правильный URL: /admin/admin/
+# AT-008: Доступ без прав менеджера
 @pytest.mark.asyncio
 async def test_admin_access_denied(client: AsyncClient, user_token: dict):
-    resp = await client.post("/admin/admin/hotels", json={
+    resp = await client.post("/admin/hotels", json={
         "name": "Fake", "location": "Nowhere"
     }, headers=user_token)
-    print(f"[DEBUG] POST /admin/admin/hotels: {resp.status_code}")
+    print(f"[DEBUG] POST /admin/hotels: {resp.status_code}")
     assert resp.status_code == 403
     assert "Manager" in resp.json()["detail"]
 
@@ -87,12 +130,12 @@ async def test_admin_get_all_bookings_with_verification(client: AsyncClient, man
     booking_id = create_resp.json()["id"]
     
     # 2. Менеджер получает список всех броней
-    # ⚠️ Используем /admin/admin/ из-за двойного префикса в роутере
-    resp = await client.get("/admin/admin/bookings?limit=10", headers=manager_token)
+    resp = await client.get("/admin/bookings?limit=10", headers=manager_token)
     print(f"[DEBUG] Admin get bookings: {resp.status_code}")
     
     assert resp.status_code == 200
-    bookings = resp.json()
+    data = resp.json()
+    bookings = data["bookings"]
     assert isinstance(bookings, list)
     
     # 3. ПРОВЕРКА: наша бронь есть в списке
@@ -122,7 +165,7 @@ async def test_admin_update_status_with_verification(client: AsyncClient, manage
     
     # 2. Менеджер меняет статус на 'confirmed'
     resp = await client.patch(
-        f"/admin/admin/bookings/{booking_id}/status",
+        f"/admin/bookings/{booking_id}/status",
         json={"status": "confirmed"},
         headers=manager_token
     )
@@ -132,7 +175,7 @@ async def test_admin_update_status_with_verification(client: AsyncClient, manage
     
     # 3. ПРОВЕРКА: обычный юзер видит обновлённый статус
     get_resp = await client.get("/bookings/my", headers=user_token)
-    bookings = get_resp.json()
+    bookings = get_resp.json()["bookings"]
     updated_booking = next((b for b in bookings if b["id"] == booking_id), None)
     assert updated_booking is not None
     assert updated_booking["status"] == "confirmed"
@@ -144,7 +187,7 @@ async def test_admin_update_status_with_verification(client: AsyncClient, manage
 async def test_admin_access_denied_regular_user(client: AsyncClient, user_token: dict):
     """Обычный пользователь НЕ может получить доступ к админ-эндпоинтам"""
     # Пытаемся создать отель как обычный юзер (is_manager=false)
-    resp = await client.post("/admin/admin/hotels", json={
+    resp = await client.post("/admin/hotels", json={
         "name": "Fake Hotel",
         "location": "Nowhere"
     }, headers=user_token)

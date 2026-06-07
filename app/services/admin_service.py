@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import selectinload
 from typing import Optional
 
@@ -12,15 +12,46 @@ class AdminService:
     async def get_all_bookings(
             self, db: AsyncSession, *, user_id: Optional[int], hotel_id: Optional[int], limit: int, offset: int
     ):
+        filters = []
         query = select(Booking).options(selectinload(Booking.user), selectinload(Booking.room).selectinload(Room.hotel))
+        stats_query = select(
+            func.count(Booking.id).label("total_bookings"),
+            func.coalesce(
+                func.sum(case((Booking.status == BookingStatus.confirmed, 1), else_=0)),
+                0,
+            ).label("confirmed_bookings"),
+            func.coalesce(
+                func.sum(case((Booking.status == BookingStatus.cancelled, 1), else_=0)),
+                0,
+            ).label("cancelled_bookings"),
+            func.coalesce(
+                func.sum(case((Booking.status == BookingStatus.confirmed, Booking.total_price), else_=0)),
+                0,
+            ).label("total_revenue"),
+        )
 
         if user_id:
-            query = query.where(Booking.user_id == user_id)
+            filters.append(Booking.user_id == user_id)
         if hotel_id:
-            query = query.join(Room).where(Room.hotel_id == hotel_id)
+            query = query.join(Room)
+            stats_query = stats_query.join(Room)
+            filters.append(Room.hotel_id == hotel_id)
+
+        if filters:
+            query = query.where(*filters)
+            stats_query = stats_query.where(*filters)
 
         result = await db.execute(query.offset(offset).limit(limit))
-        return result.scalars().all()
+        bookings = result.scalars().all()
+        stats = (await db.execute(stats_query)).one()
+
+        return {
+            "bookings": bookings,
+            "total_bookings": stats.total_bookings,
+            "confirmed_bookings": stats.confirmed_bookings,
+            "cancelled_bookings": stats.cancelled_bookings,
+            "total_revenue": stats.total_revenue,
+        }
 
     async def update_booking_status(self, db: AsyncSession, *, booking_id: int, new_status: BookingStatus):
         query = select(Booking).where(Booking.id == booking_id)

@@ -1,6 +1,8 @@
 import pytest
 from httpx import AsyncClient
 
+from app.core.security import decode_token
+
 # AT-001: Регистрация обычного пользователя
 @pytest.mark.asyncio
 async def test_register_user(client: AsyncClient):
@@ -84,6 +86,33 @@ async def test_login_success(client: AsyncClient):
     assert "access_token" in data
     assert "refresh_token" in data
     assert data["token_type"] == "bearer"
+    payload = decode_token(data["access_token"])
+    assert payload["is_manager"] is False
+
+    refresh_resp = await client.post("/auth/refresh")
+    assert refresh_resp.status_code == 200
+    refresh_payload = decode_token(refresh_resp.json()["access_token"])
+    assert refresh_payload["is_manager"] is False
+
+
+@pytest.mark.asyncio
+async def test_login_manager_token_contains_is_manager(client: AsyncClient):
+    await client.post("/auth/register", json={
+        "first_name": "Manager",
+        "last_name": "Login",
+        "login": "manager-login@test.com",
+        "password": "Pass123!",
+        "is_manager": True
+    })
+
+    resp = await client.post("/auth/login", data={
+        "username": "manager-login@test.com",
+        "password": "Pass123!"
+    })
+
+    assert resp.status_code == 200
+    payload = decode_token(resp.json()["access_token"])
+    assert payload["is_manager"] is True
 
 # AT-005: Вход с неверным паролем
 @pytest.mark.asyncio

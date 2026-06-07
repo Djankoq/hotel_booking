@@ -65,11 +65,11 @@ async def seed_data():
 
         print(f"Создание {NUM_HOTELS} отелей...")
         hotels = []
-        for _ in range(NUM_HOTELS):
+        for i in range(NUM_HOTELS):
             hotels.append(Hotel(
                 name=f"Отель «{fake.word().capitalize()}»", location=fake.city(),
                 description=fake.text(max_nb_chars=200), manager_id=manager_user.id,
-                image_url=f"https://picsum.photos/seed/{random.randint(1, 1000)}/800/600"
+                image_url="https://s.101hotelscdn.ru/uploads/image/hotel_image/650308/5657634_preview.jpg"
             ))
         session.add_all(hotels)
         await session.commit()
@@ -78,11 +78,11 @@ async def seed_data():
         print("Создание комнат...")
         all_rooms = []
         for hotel in hotels:
-            for _ in range(random.randint(MIN_ROOMS_PER_HOTEL, MAX_ROOMS_PER_HOTEL)):
+            for i in range(random.randint(MIN_ROOMS_PER_HOTEL, MAX_ROOMS_PER_HOTEL)):
                 all_rooms.append(Room(
                     hotel_id=hotel.id, name=f"{random.choice(['Стандарт', 'Люкс', 'Делюкс', 'Семейный'])}",
                     price_per_night=Decimal(random.randrange(2500, 15000)), capacity=random.randint(1, 4),
-                    description=fake.sentence(), image_url=f"https://picsum.photos/seed/{random.randint(1, 1000)}/400/300"
+                    description=fake.sentence(), image_url="https://s.101hotelscdn.ru/uploads/image/hotel_image/2458/4811187.jpg"
                 ))
         session.add_all(all_rooms)
         await session.commit()

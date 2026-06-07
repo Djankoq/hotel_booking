@@ -1,10 +1,11 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import and_, or_, not_, select, func, distinct
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, joinedload
 from app.models.hotel import Hotel, Room
 from app.models.booking import Booking
 from typing import Optional, Tuple, List
 from datetime import date
+from app.schemas.hotel import RoomDetail
 
 
 class HotelService:
@@ -73,10 +74,24 @@ class HotelService:
 
         return hotels, total_count
 
-    async def get_rooms_by_hotel(self, db: AsyncSession, *, hotel_id: int):
-        query = select(Room).where(Room.hotel_id == hotel_id)
+    async def get_rooms_by_hotel(self, db: AsyncSession, *, hotel_id: int) -> List[RoomDetail]:
+        query = (
+            select(Room)
+            .where(Room.hotel_id == hotel_id)
+            .options(joinedload(Room.hotel))
+        )
         result = await db.execute(query)
-        return result.scalars().all()
+        rooms = result.scalars().unique().all()
+
+        return [
+            RoomDetail(
+                **room.__dict__,
+                hotel_name=room.hotel.name,
+                hotel_description=room.hotel.description,
+                hotel_image_url=room.hotel.image_url,
+            )
+            for room in rooms
+        ]
 
 
 hotel_service = HotelService()

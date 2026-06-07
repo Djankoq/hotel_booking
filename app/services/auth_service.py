@@ -15,6 +15,10 @@ from app.models.user import User
 from app.db.session import get_db
 
 
+def _user_token_payload(user: User) -> dict[str, str | bool]:
+    return {"sub": str(user.id), "is_manager": bool(user.is_manager)}
+
+
 async def register_user(
     db: AsyncSession,
     *,
@@ -46,9 +50,9 @@ async def login_user(db: AsyncSession, *, login: str, password: str) -> tuple[st
     if not user or not verify_password(password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
-    subject = {"sub": str(user.id)}
-    access = create_access_token(subject)
-    refresh = create_refresh_token(subject)
+    token_payload = _user_token_payload(user)
+    access = create_access_token(token_payload)
+    refresh = create_refresh_token(token_payload)
     return access, refresh
 
 
@@ -84,5 +88,5 @@ async def refresh_access_token(*, refresh_token: str, db: AsyncSession) -> tuple
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
-    new_access_token = create_access_token({"sub": str(user.id)})
+    new_access_token = create_access_token(_user_token_payload(user))
     return new_access_token, user
