@@ -1,6 +1,7 @@
 from pydantic import BaseModel, HttpUrl, ConfigDict, Field
 from typing import List, Optional
 from decimal import Decimal
+from datetime import date
 
 class RoomBase(BaseModel):
     name: str
@@ -13,6 +14,11 @@ class Room(RoomBase):
     id: int
     hotel_id: int
     model_config = ConfigDict(from_attributes=True)
+
+class RoomDetail(Room):
+    hotel_name: str
+    hotel_description: Optional[str] = None
+    hotel_image_url: Optional[HttpUrl] = None
 
 class HotelBase(BaseModel):
     name: str
@@ -31,3 +37,21 @@ class HotelsResponse(BaseModel):
 
 class LocationSuggestionsResponse(BaseModel):
     suggestions: List[str]
+
+class BookingInfo(BaseModel):
+    id: int
+    room_id: int
+    hotel_id: int
+    check_in: date
+    check_out: date
+    total_price: Decimal
+    status: str
+
+    class Config:
+        from_attributes = True
+
+class MyBookingsResponse(BaseModel):
+    user_first_name: str
+    user_last_name: str
+    user_login: str
+    bookings: List[BookingInfo]

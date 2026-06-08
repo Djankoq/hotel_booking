@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api import deps
-from app.schemas.hotel import Room, HotelsResponse, LocationSuggestionsResponse
+from app.schemas.hotel import HotelsResponse, RoomDetail, LocationSuggestionsResponse
 from app.services.hotel_service import hotel_service
 from typing import List, Optional
 from datetime import date
@@ -51,7 +51,7 @@ async def suggest_locations(
     return {"suggestions": suggestions}
 
 
-@router.get("/{hotel_id}/rooms", response_model=List[Room])
+@router.get("/{hotel_id}/rooms", response_model=List[RoomDetail])
 async def get_hotel_rooms(
     hotel_id: int,
     db: AsyncSession = Depends(deps.get_db),

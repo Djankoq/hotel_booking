@@ -23,6 +23,13 @@ class BookingAdminRead(BaseModel):
     status: BookingStatus
     model_config = ConfigDict(from_attributes=True)
 
+class BookingAdminResponse(BaseModel):
+    bookings: list[BookingAdminRead]
+    total_bookings: int
+    confirmed_bookings: int
+    cancelled_bookings: int
+    total_revenue: Decimal
+
 class BookingStatusUpdate(BaseModel):
     status: BookingStatus
 

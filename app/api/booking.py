@@ -1,15 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, joinedload
 
 from datetime import date
+from typing import List
 
 from app.api import deps
 from app.services.booking_service import booking_service
 from app.models.room import Room
 from app.models.booking import Booking
 from app.models.user import User
+from app.schemas.hotel import MyBookingsResponse, BookingInfo
 
 router = APIRouter(tags=["bookings"])
 
@@ -35,15 +37,38 @@ async def create_booking(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/my")
+@router.get("/my", response_model=MyBookingsResponse)
 async def get_my_bookings(
     db: AsyncSession = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_user),
 ):
-    result = await db.execute(
-        select(Booking).where(Booking.user_id == current_user.id)
+    query = (
+        select(Booking)
+        .where(Booking.user_id == current_user.id)
+        .options(joinedload(Booking.room))
     )
-    return result.scalars().all()
+    result = await db.execute(query)
+    bookings = result.scalars().all()
+
+    booking_infos = [
+        BookingInfo(
+            id=booking.id,
+            room_id=booking.room_id,
+            hotel_id=booking.room.hotel_id,
+            check_in=booking.check_in,
+            check_out=booking.check_out,
+            total_price=booking.total_price,
+            status=booking.status,
+        )
+        for booking in bookings
+    ]
+
+    return MyBookingsResponse(
+        user_first_name=current_user.first_name,
+        user_last_name=current_user.last_name,
+        user_login=current_user.login,
+        bookings=booking_infos,
+    )
 
 @router.delete("/{booking_id}")
 async def cancel_booking(

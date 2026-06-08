@@ -1,16 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List, Optional
+from typing import Optional
 
 from app.api import deps
 from app.models import User
-from app.schemas.admin import BookingAdminRead, BookingStatusUpdate, HotelCreate, RoomCreate
+from app.schemas.admin import BookingAdminRead, BookingAdminResponse, BookingStatusUpdate, HotelCreate, RoomCreate
 from app.schemas.hotel import Hotel as HotelRead, Room as RoomRead
 from app.services.admin_service import admin_service
 
 router = APIRouter(tags=["admin"], dependencies=[Depends(deps.get_current_manager)])
 
-@router.get("/bookings", response_model=List[BookingAdminRead])
+@router.get("/bookings", response_model=BookingAdminResponse)
 async def get_all_bookings(
     user_id: Optional[int] = None,
     hotel_id: Optional[int] = None,
