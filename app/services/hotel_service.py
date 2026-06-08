@@ -78,5 +78,22 @@ class HotelService:
         result = await db.execute(query)
         return result.scalars().all()
 
+    async def search_location_suggestions(
+        self,
+        db: AsyncSession,
+        *,
+        q: str,
+        limit: int = 10,
+    ) -> List[str]:
+        query = (
+            select(Hotel.location)
+            .where(Hotel.location.ilike(f"%{q}%"))
+            .distinct()
+            .order_by(Hotel.location)
+            .limit(limit)
+        )
+        result = await db.execute(query)
+        return list(result.scalars().all())
+
 
 hotel_service = HotelService()

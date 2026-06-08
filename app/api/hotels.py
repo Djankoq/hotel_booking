@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api import deps
-from app.schemas.hotel import Room, HotelsResponse
+from app.schemas.hotel import Room, HotelsResponse, LocationSuggestionsResponse
 from app.services.hotel_service import hotel_service
 from typing import List, Optional
 from datetime import date
@@ -36,6 +36,19 @@ async def get_hotels(
         offset=offset,
     )
     return {"total": total_count, "hotels": hotels}
+
+
+@router.get("/locations/suggest", response_model=LocationSuggestionsResponse)
+async def suggest_locations(
+    q: str = Query(..., min_length=1, description="Часть названия города"),
+    limit: int = Query(10, ge=1, le=50),
+    db: AsyncSession = Depends(deps.get_db),
+):
+    """
+    Подсказки локаций для автодополнения в фильтре поиска отелей.
+    """
+    suggestions = await hotel_service.search_location_suggestions(db, q=q, limit=limit)
+    return {"suggestions": suggestions}
 
 
 @router.get("/{hotel_id}/rooms", response_model=List[Room])

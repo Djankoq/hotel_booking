@@ -28,3 +28,6 @@ class Hotel(HotelBase):
 class HotelsResponse(BaseModel):
     total: int
     hotels: List[Hotel]
+
+class LocationSuggestionsResponse(BaseModel):
+    suggestions: List[str]
