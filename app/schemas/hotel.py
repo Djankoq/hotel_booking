@@ -35,6 +35,9 @@ class HotelsResponse(BaseModel):
     total: int
     hotels: List[Hotel]
 
+class LocationSuggestionsResponse(BaseModel):
+    suggestions: List[str]
+
 class BookingInfo(BaseModel):
     id: int
     room_id: int
